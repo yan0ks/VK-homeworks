@@ -1,0 +1,23 @@
+/task-99/
+
+# Материалы лекций и локальные правила
+/lesson*/
+/AGENTS.md
+
+# Настройки редакторов и временные файлы
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Результаты сборки и проверок
+*.exe
+*.test
+coverage.out
+
+# Локальные проверки и заметки ДЗ2
+/homework-2/README.md
+/homework-2/**/main_test.go
