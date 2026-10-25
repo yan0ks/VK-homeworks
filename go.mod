@@ -1,3 +1,3 @@
-module lesson1
+module homeworks
 
-go 1.24.4
+go 1.27.0
