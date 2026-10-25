@@ -25,7 +25,6 @@ func main() {
 	switch status {
 	case Regular:
 		statusName = "Regular"
-		discountRate = 0
 	case Silver:
 		statusName = "Silver"
 		discountRate = 0.05
@@ -34,7 +33,6 @@ func main() {
 		discountRate = 0.10
 	default:
 		statusName = "неизвестный статус"
-		discountRate = 0
 	}
 
 	discount := amount * discountRate
