@@ -21,3 +21,6 @@ coverage.out
 # Локальные проверки и заметки ДЗ2
 /homework-2/README.md
 /homework-2/**/main_test.go
+
+# Локальные проверки ДЗ3
+/homework-3/**/main_test.go
