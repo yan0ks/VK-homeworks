@@ -8,7 +8,6 @@ import (
 )
 
 func main() {
-	// Запускать из homework-4/task-1. Служебные данные остаются в task-99.
 	const dataDir = "../../task-99/homework-4/task-1"
 	store := storage.NewFile(dataDir + "/inventory.txt")
 	app := cli.New(store)

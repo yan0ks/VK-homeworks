@@ -8,7 +8,6 @@ import (
 	"homeworks/homework-4/task-1/internal/item"
 )
 
-// Примеры из ДЗ4 выполняются отдельно от постоянного инвентаря CLI.
 func demo(stdout io.Writer) error {
 	sword := item.NewWeapon("Меч", 3, 10, 5)
 	shield := item.NewArmor("Щит", 4.5, 5)
