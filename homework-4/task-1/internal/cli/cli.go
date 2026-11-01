@@ -14,23 +14,19 @@ import (
 
 var errUsage = errors.New("неверные аргументы")
 
-// Интерфейс объявлен у потребителя: CLI не зависит от файловой реализации.
 type store interface {
 	Load() ([]inventory.Entry, error)
 	Save([]inventory.Entry) error
 }
 
-// App обрабатывает команды с переданным файловым хранилищем или хранилищем в памяти.
 type App struct {
 	store store
 }
 
-// New связывает обработчик команд с хранилищем.
 func New(s store) *App {
 	return &App{store: s}
 }
 
-// Run направляет результаты в stdout, ошибки в stderr и возвращает код завершения.
 func (app *App) Run(args []string, stdout, stderr io.Writer) int {
 	err := app.run(args, stdout, stderr)
 	if err == nil || errors.Is(err, flag.ErrHelp) {
@@ -126,29 +122,19 @@ func (app *App) add(args []string, stdout, stderr io.Writer) error {
 	if err := parseFlags(flags, args); err != nil {
 		return err
 	}
-	if !item.ValidText(*name) || !item.ValidWeight(*weight) {
-		return fmt.Errorf("%w: имя — до 16 КиБ без | и переводов строк; "+
-			"вес — конечное неотрицательное число", errUsage)
-	}
-	var value item.Item
+	var value item.Storable
 	switch *kind {
 	case "weapon":
-		if *damage < 0 || *durability < 0 {
-			return fmt.Errorf("%w: урон и прочность не могут быть отрицательными", errUsage)
-		}
 		value = item.NewWeapon(*name, *weight, *damage, *durability)
 	case "armor":
-		if *defense < 0 {
-			return fmt.Errorf("%w: защита не может быть отрицательной", errUsage)
-		}
 		value = item.NewArmor(*name, *weight, *defense)
 	case "potion":
-		if *charges < 0 || !item.ValidText(*effect) {
-			return fmt.Errorf("%w: неверные заряды или эффект зелья", errUsage)
-		}
 		value = item.NewPotion(*name, *weight, *effect, *charges)
 	default:
 		return fmt.Errorf("%w: неизвестный тип %q", errUsage, *kind)
+	}
+	if err := value.Validate(); err != nil {
+		return fmt.Errorf("%w: %w", errUsage, err)
 	}
 	inv, err := app.load()
 	if err != nil {
@@ -205,8 +191,6 @@ func newFlags(name string, stderr io.Writer) *flag.FlagSet {
 }
 
 func parseFlags(flags *flag.FlagSet, args []string) error {
-	// flag сам печатает ошибки. Буфер позволяет вывести их только один раз
-	// на общей границе, а справку сохранить без изменения.
 	output := flags.Output()
 	var details strings.Builder
 	flags.SetOutput(&details)

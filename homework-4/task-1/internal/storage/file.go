@@ -10,17 +10,14 @@ import (
 	"homeworks/homework-4/task-1/internal/inventory"
 )
 
-// File сохраняет инвентарь в файл, заменяя его только после успешной записи.
 type File struct {
 	path string
 }
 
-// NewFile задаёт путь; каталог данных создаётся только при сохранении.
 func NewFile(path string) *File {
 	return &File{path: path}
 }
 
-// Load возвращает пустой инвентарь, если файл отсутствует.
 func (s *File) Load() (entries []inventory.Entry, err error) {
 	file, err := os.Open(s.path)
 	if errors.Is(err, os.ErrNotExist) {
@@ -42,12 +39,10 @@ func (s *File) Load() (entries []inventory.Entry, err error) {
 	return entries, nil
 }
 
-// Save проверяет записи и сохраняет их через временный файл.
 func (s *File) Save(entries []inventory.Entry) error {
 	return s.save(entries, writeData)
 }
 
-// Функция записи передаётся отдельно, чтобы проверить отказ посередине записи.
 func (s *File) save(entries []inventory.Entry, write func(io.Writer, string) error) (err error) {
 	data, err := encodeEntries(entries)
 	if err != nil {
@@ -56,7 +51,6 @@ func (s *File) save(entries []inventory.Entry, write func(io.Writer, string) err
 	if err := os.MkdirAll(filepath.Dir(s.path), 0755); err != nil {
 		return fmt.Errorf("каталог для %q: %w", s.path, err)
 	}
-	// Временный файл создаётся рядом с основным: замена не пересекает файловые системы.
 	file, err := os.CreateTemp(filepath.Dir(s.path), ".inventory-*.tmp")
 	if err != nil {
 		return fmt.Errorf("временный файл для %q: %w", s.path, err)
@@ -68,7 +62,6 @@ func (s *File) save(entries []inventory.Entry, write func(io.Writer, string) err
 				err = errors.Join(err, fmt.Errorf("закрытие временного файла: %w", closeErr))
 			}
 		}
-		// После успешной замены временного файла уже нет.
 		if removeErr := os.Remove(tempPath); removeErr != nil && !errors.Is(removeErr, os.ErrNotExist) {
 			err = errors.Join(err, fmt.Errorf("удаление временного файла: %w", removeErr))
 		}
