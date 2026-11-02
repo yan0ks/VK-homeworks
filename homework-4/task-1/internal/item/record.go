@@ -1,6 +1,7 @@
 package item
 
 import (
+	"bufio"
 	"errors"
 	"io"
 	"strings"
@@ -48,26 +49,30 @@ func validateBase(name string, weight float64) error {
 
 func readFields(reader io.Reader) ([]string, error) {
 	const maxRecordBytes = 64 * 1024
-	data, err := io.ReadAll(io.LimitReader(reader, maxRecordBytes))
-	if err != nil {
+	buffered, ok := reader.(*bufio.Reader)
+	if !ok {
+		return nil, errors.New("Передайте bufio.NewReader(...). Для последовательного чтения предметов используйте один и тот же reader")
+	}
+	line, err := buffered.ReadString('\n')
+	if err != nil && err != io.EOF {
 		return nil, err
 	}
-	if len(data) == 0 {
+	if len(line) == 0 && err == io.EOF {
 		return nil, io.EOF
 	}
-	if len(data) >= maxRecordBytes {
+	if len(line) >= maxRecordBytes {
 		return nil, errors.New("слишком длинная запись")
 	}
-	if data[len(data)-1] == '\n' {
-		data = data[:len(data)-1]
+	if line[len(line)-1] == '\n' {
+		line = line[:len(line)-1]
 	}
-	if len(data) > 0 && data[len(data)-1] == '\r' {
-		data = data[:len(data)-1]
+	if len(line) > 0 && line[len(line)-1] == '\r' {
+		line = line[:len(line)-1]
 	}
-	for _, symbol := range data {
+	for _, symbol := range line {
 		if symbol == '\n' || symbol == '\r' {
 			return nil, errors.New("ожидается одна запись")
 		}
 	}
-	return strings.Split(string(data), "|"), nil
+	return strings.Split(line, "|"), nil
 }
