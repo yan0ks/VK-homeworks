@@ -80,23 +80,16 @@ func parseEntry(text string) (inventory.Entry, error) {
 }
 
 func encodeEntries(entries []inventory.Entry) (string, error) {
-	if err := validateEntries(entries); err != nil {
+	prepared, err := prepareEntries(entries)
+	if err != nil {
 		return "", err
 	}
 	var data strings.Builder
-	for _, entry := range entries {
-		kind, err := recordType(entry.Item)
-		if err != nil {
+	for _, entry := range prepared {
+		if _, err := fmt.Fprintf(&data, "%s|%d|", entry.kind, entry.id); err != nil {
 			return "", err
 		}
-		if _, err := fmt.Fprintf(&data, "%s|%d|", kind, entry.ID); err != nil {
-			return "", err
-		}
-		storable, ok := entry.Item.(item.Storable)
-		if !ok {
-			return "", errors.New("предмет не поддерживает сохранение")
-		}
-		if err := storable.Serialize(&data); err != nil {
+		if err := entry.value.Serialize(&data); err != nil {
 			return "", fmt.Errorf("сериализация: %w", err)
 		}
 	}
@@ -118,29 +111,38 @@ func recordType(value item.Item) (string, error) {
 	}
 }
 
-func validateEntries(entries []inventory.Entry) error {
+type preparedEntry struct {
+	id    int
+	kind  string
+	value item.Storable
+}
+
+func prepareEntries(entries []inventory.Entry) ([]preparedEntry, error) {
+	prepared := make([]preparedEntry, 0, len(entries))
 	ids := make(map[int]bool)
 	for _, entry := range entries {
 		if !validID(entry.ID) {
-			return errors.New("ID вне допустимого диапазона")
+			return nil, errors.New("ID вне допустимого диапазона")
 		}
 		if ids[entry.ID] {
-			return fmt.Errorf("сохранение: повторяющийся ID %d", entry.ID)
+			return nil, fmt.Errorf("сохранение: повторяющийся ID %d", entry.ID)
 		}
 		ids[entry.ID] = true
 		if item.IsNil(entry.Item) {
-			return errors.New("сохранение: предмет отсутствует")
+			return nil, errors.New("сохранение: предмет отсутствует")
 		}
 		storable, ok := entry.Item.(item.Storable)
 		if !ok {
-			return fmt.Errorf("сохранение %q не поддерживается", entry.Item.Name())
+			return nil, fmt.Errorf("сохранение %q не поддерживается", entry.Item.Name())
 		}
 		if err := storable.Validate(); err != nil {
-			return fmt.Errorf("сохранение: %w", err)
+			return nil, fmt.Errorf("сохранение: %w", err)
 		}
-		if _, err := recordType(entry.Item); err != nil {
-			return err
+		kind, err := recordType(entry.Item)
+		if err != nil {
+			return nil, err
 		}
+		prepared = append(prepared, preparedEntry{id: entry.ID, kind: kind, value: storable})
 	}
-	return nil
+	return prepared, nil
 }

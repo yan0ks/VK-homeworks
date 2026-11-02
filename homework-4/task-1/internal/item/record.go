@@ -1,7 +1,6 @@
 package item
 
 import (
-	"bufio"
 	"errors"
 	"io"
 	"strings"
@@ -21,7 +20,6 @@ var (
 )
 
 func validText(value string) bool {
-	// Даже строка зелья с двумя текстовыми полями должна помещаться в Scanner.
 	const maxTextBytes = 16 * 1024
 	if len(value) > maxTextBytes || strings.TrimSpace(value) == "" {
 		return false
@@ -35,7 +33,6 @@ func validText(value string) bool {
 }
 
 func validWeight(weight float64) bool {
-	// У NaN и бесконечности разность с собой не равна нулю.
 	return weight >= 0 && weight-weight == 0
 }
 
@@ -50,15 +47,27 @@ func validateBase(name string, weight float64) error {
 }
 
 func readFields(reader io.Reader) ([]string, error) {
-	scanner := bufio.NewScanner(reader)
-	if !scanner.Scan() {
-		if err := scanner.Err(); err != nil {
-			return nil, err
-		}
-		return nil, io.EOF
-	}
-	if err := scanner.Err(); err != nil {
+	const maxRecordBytes = 64 * 1024
+	data, err := io.ReadAll(io.LimitReader(reader, maxRecordBytes))
+	if err != nil {
 		return nil, err
 	}
-	return strings.Split(scanner.Text(), "|"), nil
+	if len(data) == 0 {
+		return nil, io.EOF
+	}
+	if len(data) >= maxRecordBytes {
+		return nil, errors.New("слишком длинная запись")
+	}
+	if data[len(data)-1] == '\n' {
+		data = data[:len(data)-1]
+	}
+	if len(data) > 0 && data[len(data)-1] == '\r' {
+		data = data[:len(data)-1]
+	}
+	for _, symbol := range data {
+		if symbol == '\n' || symbol == '\r' {
+			return nil, errors.New("ожидается одна запись")
+		}
+	}
+	return strings.Split(string(data), "|"), nil
 }
