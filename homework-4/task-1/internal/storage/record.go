@@ -73,7 +73,8 @@ func parseEntry(text string) (inventory.Entry, error) {
 	default:
 		return inventory.Entry{}, fmt.Errorf("неизвестный тип предмета %q", fields[0])
 	}
-	if err := value.Deserialize(strings.NewReader(strings.Join(fields[2:], "|"))); err != nil {
+	reader := bufio.NewReader(strings.NewReader(strings.Join(fields[2:], "|")))
+	if err := value.Deserialize(reader); err != nil {
 		return inventory.Entry{}, err
 	}
 	return inventory.Entry{ID: id, Item: value}, nil
