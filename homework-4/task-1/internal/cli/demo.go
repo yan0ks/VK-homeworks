@@ -17,14 +17,8 @@ func demo(stdout io.Writer) error {
 	for _, value := range []item.Item{sword, shield, potion, bow} {
 		inv.AddItem(value)
 	}
-	for _, value := range []item.Item{sword, shield, potion} {
-		message, err := value.Use()
-		if err != nil {
-			return err
-		}
-		if _, err := fmt.Fprintln(stdout, message); err != nil {
-			return err
-		}
+	if err := printItemUses(stdout, []item.Item{sword, shield, potion}); err != nil {
+		return err
 	}
 	var weapon *item.Weapon
 	for _, value := range []item.Item{sword, nil, weapon} {
@@ -54,4 +48,17 @@ func demo(stdout io.Writer) error {
 	value, found := inv.FindItemByName("Щит")
 	_, err := fmt.Fprintln(stdout, "Поиск Щит:", item.DescribeItem(value), found)
 	return err
+}
+
+func printItemUses(stdout io.Writer, items []item.Item) error {
+	for _, value := range items {
+		message, err := value.Use()
+		if err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(stdout, message); err != nil {
+			return err
+		}
+	}
+	return nil
 }
