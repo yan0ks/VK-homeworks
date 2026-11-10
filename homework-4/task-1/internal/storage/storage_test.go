@@ -75,6 +75,50 @@ func TestStorageRoundTrip(t *testing.T) {
 	}
 }
 
+func TestMemoryIsolation(t *testing.T) {
+	original := item.NewWeapon("Меч", 3, 10, 5)
+	store := &Memory{}
+	if err := store.Save([]inventory.Entry{{ID: 7, Item: original}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := original.Use(); err != nil {
+		t.Fatal(err)
+	}
+	if original.Durability != 4 {
+		t.Fatalf("original durability = %d, want 4", original.Durability)
+	}
+
+	entries, err := store.Load()
+	if err != nil || len(entries) != 1 {
+		t.Fatalf("Load() after changing original = (%v, %v), want 1 entry", entries, err)
+	}
+	loaded, ok := entries[0].Item.(*item.Weapon)
+	if !ok {
+		t.Fatalf("loaded item type = %T, want *item.Weapon", entries[0].Item)
+	}
+	if entries[0].ID != 7 || loaded.Durability != 5 {
+		t.Errorf("loaded ID and durability = (%d, %d), want (7, 5)", entries[0].ID, loaded.Durability)
+	}
+	if _, err := loaded.Use(); err != nil {
+		t.Fatal(err)
+	}
+	if loaded.Durability != 4 {
+		t.Fatalf("loaded durability after Use() = %d, want 4", loaded.Durability)
+	}
+
+	entries, err = store.Load()
+	if err != nil || len(entries) != 1 {
+		t.Fatalf("Load() after changing loaded item = (%v, %v), want 1 entry", entries, err)
+	}
+	reloaded, ok := entries[0].Item.(*item.Weapon)
+	if !ok {
+		t.Fatalf("reloaded item type = %T, want *item.Weapon", entries[0].Item)
+	}
+	if entries[0].ID != 7 || reloaded.Durability != 5 {
+		t.Errorf("reloaded ID and durability = (%d, %d), want (7, 5)", entries[0].ID, reloaded.Durability)
+	}
+}
+
 func TestDecodeEntries(t *testing.T) {
 	const first = "Weapon|7|Меч|10|5|3"
 	const last = "Potion|4|Зелье|HP|0|0.5"
