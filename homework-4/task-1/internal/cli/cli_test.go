@@ -125,6 +125,26 @@ func TestCommandErrors(t *testing.T) {
 	}
 }
 
+func TestUseSaveFailure(t *testing.T) {
+	weapon := item.NewWeapon("Меч", 2, 7, 2)
+	failure := errors.New("сохранение недоступно")
+	store := &stubStore{
+		entries: []inventory.Entry{{ID: 1, Item: weapon}},
+		saveErr: failure,
+	}
+	var stdout, stderr bytes.Buffer
+	code := New(store).Run([]string{"use", "-id", "1"}, &stdout, &stderr)
+	if want := "Ошибка: " + failure.Error() + "\n"; code != 1 || stdout.Len() != 0 || stderr.String() != want {
+		t.Errorf("Run(use) = (%d, %q, %q), want (1, empty stdout, %q)", code, stdout.String(), stderr.String(), want)
+	}
+	if store.saves != 1 {
+		t.Errorf("Save calls = %d, want 1", store.saves)
+	}
+	if weapon.Durability != 1 {
+		t.Errorf("weapon durability = %d, want 1 after successful use", weapon.Durability)
+	}
+}
+
 func TestDemoAndHelp(t *testing.T) {
 	for _, tt := range []struct {
 		name   string
