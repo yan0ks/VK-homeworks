@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -15,7 +14,7 @@ import (
 )
 
 func countURL(client *http.Client, address, query string) (int, error) {
-	request, err := http.NewRequestWithContext(context.Background(), http.MethodGet, address, nil)
+	request, err := http.NewRequest(http.MethodGet, address, nil)
 	if err != nil {
 		return 0, fmt.Errorf("create request: %w", err)
 	}
